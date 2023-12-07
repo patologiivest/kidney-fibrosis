@@ -4,6 +4,7 @@ import skimage
 import glob
 import os
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 input_dir = "./demo_images"
 
@@ -61,10 +62,25 @@ matching_files = glob.glob(os.path.join(input_dir, pattern))
 #
 # print(image_score)
 
+def plot_result(img, img_not_red, img_red, score, sat):
+    fig, axs = plt.subplots(1, 3, figsize = (7, 7))
+    
+    axs[0].imshow(img)
+    axs[0].set_title('Image')
+    
+    axs[1].imshow(img_not_red)
+    axs[1].set_title("Quantified ({:.0f}%)".format(score))
+    
+    axs[2].imshow(img_red)
+    axs[2].set_title("Extracted (s_thres = {})".format(sat))
+    
+    [ax.axis('off') for ax in axs]
+    plt.tight_layout()
+    
 
-def quantification(tiles: list[str]):
+def quantification(tiles: list[str], plot = True):
     scores = []
-    for s in range(1, 150):
+    for s in range(1, 150, 10):
         for file in tiles:
             tile_input = skimage.io.imread(file)
             count_foreground_pixel = np.count_nonzero(tile_input)
@@ -78,6 +94,11 @@ def quantification(tiles: list[str]):
             if count_treshold_red != 0:
                 tile_score = (count_treshold_red / count_foreground_pixel) * 100
                 scores.append(tile_score)
+                
+            if plot:
+                not_red = cv2.bitwise_and(tile_input, tile_input, mask=cv2.bitwise_not(mask_red))
+                plot_result(tile_input, not_red, only_red, tile_score, s)
+                
         total_score = sum(scores) / len(scores)
     return total_score
 
