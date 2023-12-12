@@ -5,6 +5,7 @@ import glob
 import os
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 input_dir = "./demo_images"
 
@@ -62,19 +63,35 @@ matching_files = glob.glob(os.path.join(input_dir, pattern))
 #
 # print(image_score)
 
-def plot_result(img, img_not_red, img_red, score, sat):
+def plot_result(img, mask, score):
     fig, axs = plt.subplots(1, 3, figsize = (7, 7))
     
     axs[0].imshow(img)
-    axs[0].set_title('Image')
+    axs[0].set_title('Original')
     
-    axs[1].imshow(img_not_red)
+    # Change color of pixels classified as fibrosis
+    img_gray = skimage.color.rgb2gray(img)
+    img_rgb = np.repeat(img_gray[:, :, np.newaxis], 3, axis=2)
+    img_rgb = np.uint8(img_rgb * 255)
+    img_rgb[mask == 255, :] = (255, 182, 0) # change to yellow
+    
+    axs[1].imshow(img_rgb)
     axs[1].set_title("Quantified ({:.0f}%)".format(score))
     
-    axs[2].imshow(img_red)
-    axs[2].set_title("Extracted (s_thres = {})".format(sat))
+    # Get zoom rectangle
+    pos = [2000, 500]
+    w_h = [800, 800]
+    image_zoom = img_rgb[pos[0] : pos[0] + w_h[0], pos[1] : pos[1] + w_h[1], :]
     
-    [ax.axis('off') for ax in axs]
+    rect = patches.Rectangle((pos[1], pos[0]), w_h[0], w_h[1], linewidth=1, edgecolor='k', facecolor='none')
+    axs[1].add_patch(rect)
+    
+    axs[2].imshow(image_zoom)
+    axs[2].set_title("Zoom")
+    axs[2].axes.xaxis.set_ticks([])
+    axs[2].axes.yaxis.set_ticks([])
+    
+    [ax.axis('off') for ax in axs[:-1]]
     plt.tight_layout()
     
 
@@ -96,8 +113,7 @@ def quantification(tiles: list[str], plot = True):
                 scores.append(tile_score)
                 
             if plot:
-                not_red = cv2.bitwise_and(tile_input, tile_input, mask=cv2.bitwise_not(mask_red))
-                plot_result(tile_input, not_red, only_red, tile_score, s)
+                plot_result(tile_input, mask_red, tile_score)
                 
         total_score = sum(scores) / len(scores)
     return total_score
