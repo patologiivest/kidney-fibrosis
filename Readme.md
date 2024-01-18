@@ -13,3 +13,6 @@ The goal of this project is to quantify the amount of fibrosis in kidney biopsie
 **Example visualization of the quantified fibrosis**
 
 <img src="quantification_example.png" width="500"/>
+
+**WSI examples**
+Images can be found [here](https://1drv.ms/f/s!AhNRStGceBGkic41KBJ1qpv63QOHZQ?e=dml31P)
