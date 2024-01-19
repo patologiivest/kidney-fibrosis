@@ -5,9 +5,9 @@ The goal of this project is to quantify the amount of fibrosis in kidney biopsie
 **TODO**
 - [x] Compute amount of fibrosis as a percentage
 - [x] Display percentage of fibrosis on EMPAIA platform 
-- [ ] Select a saturation thresholds, see Issue #1.
+- [x] Select a saturation thresholds, see Issue #1
 - [x] Visualize fibrosis in image
-- [ ] Write function to get (x,y) coordinates of the pixels quantified
+- [x] Write function to get (x,y) coordinates of the quantified pixels
 - [ ] Visualize fibrosis on EMPAIA platform 
 
 **Example visualization of the quantified fibrosis**
