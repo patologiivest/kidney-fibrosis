@@ -3,24 +3,26 @@ import cv2
 import glob
 import os
 import matplotlib.pyplot as plt
+import PIL
 
 #%% Settings
-input_dir = "./images"
+input_dir = "images"
 pattern = "*.png"  # pattern to match filenames
 sat = 50 # saturation threshold 
 
 #%% Prep
 matching_files = glob.glob(os.path.join(input_dir, pattern)) # list all files in the folder that match the pattern
-
+images = [PIL.Image.open(file) for file in matching_files]
+    
 #%% Quantification
-def plot_result(img, mask, score):
+def plot_result(image, mask, score):
     fig, axs = plt.subplots(1, 2, figsize = (7, 7))
     
-    axs[0].imshow(img[...,::-1]) # BGR to RGB (needed by plt)
+    axs[0].imshow(image)
     axs[0].set_title('Original')
     
     # Change color of pixels classified as fibrosis
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # convert to grayscale
+    img_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) # convert to grayscale
     img_rgb = np.repeat(img_gray[:, :, np.newaxis], 3, axis=2)
     img_rgb[mask == 255, :] = (102, 85, 92) # color of pixels quantified
 
@@ -31,12 +33,12 @@ def plot_result(img, mask, score):
     plt.tight_layout()
     
 
-def quantification(file, plot = False):
+def quantification(img_PIL, plot = True):
     """Quantify amount of fibrosis in a single image"""
-    img = cv2.imread(file) # loaded as B G R
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = np.asarray(img_PIL) # RGB
+    img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     count_foreground_pixel = np.count_nonzero(img_gray)
-    grid_HSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    grid_HSV = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     mask_1 = cv2.inRange(grid_HSV, (0, sat, 50), (5, 255, 255)) # (low_H, low_S, low_V), (high_H, high_S, high_V)
     mask_2 = cv2.inRange(grid_HSV, (160, sat, 20), (180, 255, 255))
     mask_red = cv2.bitwise_or(mask_1, mask_2)
@@ -55,18 +57,18 @@ def quantification(file, plot = False):
     return score, idx
 
 
-def quantify(tiles: list[str]):
+def quantify(tiles):
     """Quantify amount of fibrosis in a set of images"""
     scores = []
     pixels = dict()
     for tile in tiles:
         tile_score, xy = quantification(tile) 
         scores.append(tile_score)
-        pixels[tile] = xy
+        pixels[tile.filename] = xy
         
     tiles_score = np.nanmean(scores)
     
     return round(tiles_score), pixels
 
 
-total_score, pixels_dict = quantify(matching_files)
+total_score, pixels_xy = quantify(images)
